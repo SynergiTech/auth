@@ -68,24 +68,43 @@ class Auth_Create_Authdefaults
 				\Auth::instance()->create_user('admin', 'admin', 'admin@example.org', $group_id_admin, array('fullname' => 'System administrator'));
 			}
 
-			// create the guest account
-			list($guest_id, $affected) = \DB::insert($table)->set(
-				array(
-					'username' => 'guest',
-					'password' => 'YOU CAN NOT USE THIS TO LOGIN',
-					'email' => '',
-					'group_id' => $group_id_guest,
-					'last_login' => 0,
-					'previous_login' => 0,
-					'login_hash' => '',
-					'user_id' => 0,
-					'created_at' => time(),
-					'updated_at' => 0,
-				)
-			)->execute($connection);
+			$guest_details = array(
+				'username' => 'guest',
+				'password' => 'YOU CAN NOT USE THIS TO LOGIN',
+				'email' => '',
+				'group_id' => $group_id_guest,
+				'last_login' => 0,
+				'previous_login' => 0,
+				'login_hash' => '',
+				'user_id' => 0,
+				'created_at' => time(),
+				'updated_at' => 0,
+			);
 
-			// adjust the id's, auto_increment doesn't want to create a key with value 0
-			\DB::update($table)->set(array('id' => 0))->where('id', '=', $guest_id)->execute($connection);
+			// create the guest account
+			list($guest_id, $affected) = \DB::insert($table)->set($guest_details)->execute($connection);
+
+			try
+			{
+				// adjust the id's, auto_increment doesn't want to create a key with value 0
+				\DB::update($table)->set(array('id' => 0))->where('id', '=', $guest_id)->execute($connection);
+			}
+			catch (\Exception $e)
+			{
+				if (\DB::instance() instanceof \Fuel\Core\Database_Sqlsrv_Connection)
+				{
+					// MS SQL will not let you update an identity column, delete the original guest row and forcibly set the id
+					\DB::delete($table)->where('id', '=', $guest_id)->execute($connection);
+					$guest_details['id'] = 0;
+					$guest_query = \DB::insert($table)->set($guest_details)->compile($connection);
+					list($guest_id, $affected) = \DB::query("SET IDENTITY_INSERT $table ON\n\n$guest_query")->execute($connection);
+				}
+				else
+				{
+					// NOT MS SQL, continue to throw exception
+					throw $e;
+				}
+			}
 
 			// add guests full name to the metadata
 			\DB::insert($table.'_metadata')->set(
