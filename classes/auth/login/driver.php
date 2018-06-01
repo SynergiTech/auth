@@ -166,7 +166,6 @@ abstract class Auth_Login_Driver extends \Auth_Driver
 	/**
 	 * Checks to see if the supplied hash was generated using the legacy algorithm
 	 *
-	 * @param   string $password
 	 * @param   string $hash
 	 * @return  bool
 	 */
@@ -195,7 +194,6 @@ abstract class Auth_Login_Driver extends \Auth_Driver
 	/**
 	 * Check if the password needs rehashing
 	 *
-	 * @param   string $password
 	 * @param   string $hash
 	 * @return  bool
 	 */
@@ -217,7 +215,7 @@ abstract class Auth_Login_Driver extends \Auth_Driver
 	/**
 	 * Backwards-compatible alias of password_hash
 	 *
-	 * @param   string
+	 * @param   string $password
 	 * @return  string
 	 */
 	public function hash_password($password)
@@ -228,7 +226,7 @@ abstract class Auth_Login_Driver extends \Auth_Driver
 	/**
 	 * Legacy password hash method
 	 *
-	 * @param   string
+	 * @param   string $password
 	 * @return  string
 	 */
 	public function password_hash_legacy($password)
