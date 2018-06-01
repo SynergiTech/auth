@@ -84,19 +84,25 @@ class Auth_Login_Ormauth extends \Auth_Login_Driver
 			return false;
 		}
 
-		// hash the password
-		$password = $this->hash_password($password);
-
 		// and do a lookup of this user
 		$user = \Model\Auth_User::query()
 			->select(\Config::get('ormauth.table_columns', array()))
 			->related('metadata')
-			->where_open()
-				->where('username', '=', $username_or_email)
-				->or_where('email', '=', $username_or_email)
-			->where_close()
-			->where('password', '=', $password)
+			->where('username', '=', $username_or_email)
+			->or_where('email', '=', $username_or_email)
 			->get_one();
+
+		if (!$user) {
+			return false;
+		}
+
+		if (!$this->password_verify($password, $user->password)) {
+			return false;
+		}
+
+		if ($this->password_needs_rehash($user->password)) {
+			$this->change_password($password, $password, $user->username);
+		}
 
 		// return the user object, or false if not found
 		return $user ?: false;
@@ -269,7 +275,7 @@ class Auth_Login_Ormauth extends \Auth_Login_Driver
 		// create the new user record
 		$user = \Model\Auth_User::forge(array(
 			'username'        => (string) $username,
-			'password'        => $this->hash_password((string) $password),
+			'password'        => $this->password_hash((string) $password),
 			'email'           => $email,
 			'group_id'        => (int) $group,
 			'last_login'      => 0,
@@ -330,7 +336,7 @@ class Auth_Login_Ormauth extends \Auth_Login_Driver
 		if (array_key_exists('password', $values))
 		{
 			if (empty($values['old_password'])
-				or $current_values->password != $this->hash_password(trim($values['old_password'])))
+				or !$this->password_verify(trim($values['old_password']), $current_values->password))
 			{
 				throw new \SimpleUserWrongPassword('Old password is invalid');
 			}
@@ -340,7 +346,7 @@ class Auth_Login_Ormauth extends \Auth_Login_Driver
 			{
 				throw new \SimpleUserUpdateException('Password can\'t be empty.', 6);
 			}
-			$update['password'] = $this->hash_password($password);
+			$update['password'] = $this->password_hash($password);
 			unset($values['password']);
 		}
 		if (array_key_exists('old_password', $values))
@@ -466,7 +472,7 @@ class Auth_Login_Ormauth extends \Auth_Login_Driver
 
 		// generate a new random password
 		$new_password = \Str::random('alnum', 8);
-		$user->password = $this->hash_password($new_password);
+		$user->password = $this->password_hash($new_password);
 
 		// store the updated password hash
 		$user->save();

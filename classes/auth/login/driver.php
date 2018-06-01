@@ -164,12 +164,74 @@ abstract class Auth_Login_Driver extends \Auth_Driver
 	}
 
 	/**
+	 * Checks to see if the supplied hash was generated using the legacy algorithm
+	 *
+	 * @param   string $password
+	 * @param   string $hash
+	 * @return  bool
+	 */
+	public function isLegacyPassword($hash)
+	{
+		$info = password_get_info($hash);
+		return $info['algo'] == 0;
+	}
+
+	/**
 	 * Default password hash method
+	 *
+	 * @param   string $password
+	 * @param   string $hash
+	 * @return  bool
+	 */
+	public function password_verify($password, $hash)
+	{
+		if ($this->isLegacyPassword($hash)) {
+			return $this->password_hash_legacy($password) === $hash;
+		}
+
+		return password_verify($password, $hash);
+	}
+
+	/**
+	 * Check if the password needs rehashing
+	 *
+	 * @param   string $password
+	 * @param   string $hash
+	 * @return  bool
+	 */
+	public function password_needs_rehash($hash)
+	{
+		return password_needs_rehash($hash, \Config::get('auth.algorithm.name', PASSWORD_DEFAULT), \Config::get('auth.algorithm.options', []));
+	}
+
+	/**
+	 * default password hashing
+	 * @param  string $password
+	 * @return string
+	 */
+	public function password_hash($password)
+	{
+		return password_hash($password, \Config::get('auth.algorithm.name', PASSWORD_DEFAULT), \Config::get('auth.algorithm.options', []));
+	}
+
+	/**
+	 * Backwards-compatible alias of password_hash
 	 *
 	 * @param   string
 	 * @return  string
 	 */
 	public function hash_password($password)
+	{
+		return $this->password_hash($password);
+	}
+
+	/**
+	 * Legacy password hash method
+	 *
+	 * @param   string
+	 * @return  string
+	 */
+	public function password_hash_legacy($password)
 	{
 		return base64_encode(hash_pbkdf2('sha256', $password, \Config::get('auth.salt'), \Config::get('auth.iterations', 10000), 32, true));
 	}
