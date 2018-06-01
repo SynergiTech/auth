@@ -1,5 +1,5 @@
 {
-	"name": "fuel/auth",
+	"name": "synergitech/fuel-auth",
 	"description" : "FuelPHP 1.x Auth Package",
 	"type": "fuel-package",
 	"homepage": "https://github.com/fuel/auth",
