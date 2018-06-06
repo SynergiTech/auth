@@ -125,6 +125,7 @@ class Auth_Login_Simpleauth extends \Auth_Login_Driver
 		}
 
 		$user = \DB::select_array(\Config::get('simpleauth.table_columns', array('*')))
+			->where('username', '=', $username_or_email)
 			->or_where('email', '=', $username_or_email)
 			->from(\Config::get('simpleauth.table_name'))
 			->execute(\Config::get('simpleauth.db_connection'))->current();
