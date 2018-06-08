@@ -124,17 +124,25 @@ class Auth_Login_Simpleauth extends \Auth_Login_Driver
 			return false;
 		}
 
-		$password = $this->hash_password($password);
 		$user = \DB::select_array(\Config::get('simpleauth.table_columns', array('*')))
-			->where_open()
 			->where('username', '=', $username_or_email)
 			->or_where('email', '=', $username_or_email)
-			->where_close()
-			->where('password', '=', $password)
 			->from(\Config::get('simpleauth.table_name'))
 			->execute(\Config::get('simpleauth.db_connection'))->current();
 
-		return $user ?: false;
+		if (!$user) {
+			return false;
+		}
+
+		if (!$this->password_verify($password, $user['password'])) {
+			return false;
+		}
+
+		if ($this->password_needs_rehash($user['password'])) {
+			$this->change_password($password, $password, $user['username']);
+		}
+
+		return $user;
 	}
 
 	/**
@@ -257,7 +265,7 @@ class Auth_Login_Simpleauth extends \Auth_Login_Driver
 
 		$user = array(
 			'username'        => (string) $username,
-			'password'        => $this->hash_password((string) $password),
+			'password'        => $this->password_hash((string) $password),
 			'email'           => $email,
 			'group'           => (int) $group,
 			'profile_fields'  => serialize($profile_fields),
@@ -301,7 +309,7 @@ class Auth_Login_Simpleauth extends \Auth_Login_Driver
 		if (array_key_exists('password', $values))
 		{
 			if (empty($values['old_password'])
-				or $current_values->get('password') != $this->hash_password(trim($values['old_password'])))
+				or !$this->password_verify(trim($values['old_password']), $current_values->get('password')))
 			{
 				throw new \SimpleUserWrongPassword('Old password is invalid');
 			}
@@ -311,7 +319,7 @@ class Auth_Login_Simpleauth extends \Auth_Login_Driver
 			{
 				throw new \SimpleUserUpdateException('Password can\'t be empty.', 6);
 			}
-			$update['password'] = $this->hash_password($password);
+			$update['password'] = $this->password_hash($password);
 			unset($values['password']);
 		}
 		if (array_key_exists('old_password', $values))
@@ -412,7 +420,7 @@ class Auth_Login_Simpleauth extends \Auth_Login_Driver
 	public function reset_password($username)
 	{
 		$new_password = \Str::random('alnum', 8);
-		$password_hash = $this->hash_password($new_password);
+		$password_hash = $this->password_hash($new_password);
 
 		$affected_rows = \DB::update(\Config::get('simpleauth.table_name'))
 			->set(array('password' => $password_hash))
