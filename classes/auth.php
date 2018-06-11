@@ -468,6 +468,46 @@ class Auth
 			return false;
 		}
 	}
+
+	public static function has_role($role_id = null, $user = null)
+	{
+		if (! is_array($role_id)) {
+			$role_id = array($role_id);
+		}
+
+		if ($user === null && static::instance()) {
+			$user = static::get_user();
+		}
+
+		if ($user instanceof Model\Auth_User && ($user->roles || $user->group)) {
+			$roles = $user->roles;
+			if ($user->group && $user->group->roles) {
+				$roles = array_merge($roles, $user->group->roles);
+			}
+
+			foreach ($roles as $role) {
+				foreach ($role_id as $test_role) {
+					$tocheck = $role->name;
+
+					// asterisk means "any of"
+					if (substr($test_role, -2) === '.*') {
+						// remove down to full stop on test_role
+						$test_role = substr($test_role, 0, -1);
+
+						// don't worry about the full stop, just go for a match against test role
+						// anything more would be overkill
+						$tocheck = substr($tocheck, 0, strlen($test_role));
+					}
+
+					if ($tocheck == $test_role) {
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
+	}
 }
 
 /* end of file auth.php */
