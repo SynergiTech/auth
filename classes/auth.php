@@ -471,12 +471,12 @@ class Auth
 
 	public static function has_role($role_id = null, $user = null)
 	{
-		$role_id_static = $role_id;
+		if (! is_array($role_id)) {
+			$role_id = array($role_id);
+		}
 
-		if ($user === null) {
-			if (static::instance()) {
-				$user = static::get_user();
-			}
+		if ($user === null && static::instance()) {
+			$user = static::get_user();
 		}
 
 		if ($user instanceof Model\Auth_User && ($user->roles || $user->group)) {
@@ -486,30 +486,21 @@ class Auth
 			}
 
 			foreach ($roles as $role) {
-				$role_id = $role_id_static;
-				if (is_array($role_id)) {
-					foreach ($role_id as $test_role) {
-						if (substr($test_role, -2) === '.*') {
-							$test_role = rtrim($test_role, '*');
-							if (substr($role->name, 0, strlen($test_role)) === $test_role) {
-								return true;
-							}
-						} else {
-							if ($role->name == $test_role) {
-								return true;
-							}
-						}
+				foreach ($role_id as $test_role) {
+					$tocheck = $role->name;
+
+					// asterisk means "any of"
+					if (substr($test_role, -2) === '.*') {
+						// remove down to full stop on test_role
+						$test_role = substr($test_role, 0, -1);
+
+						// don't worry about the full stop, just go for a match against test role
+						// anything more would be overkill
+						$tocheck = substr($tocheck, 0, strlen($test_role));
 					}
-				} else {
-					if (substr($role_id, -2) === '.*') {
-						$role_id = rtrim($role_id, '.*');
-						if (substr($role->name, 0, strlen($role_id)) === $role_id) {
-							return true;
-						}
-					} else {
-						if ($role->name == $role_id) {
-							return true;
-						}
+
+					if ($tocheck == $test_role) {
+						return true;
 					}
 				}
 			}
