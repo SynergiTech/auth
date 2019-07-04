@@ -57,7 +57,7 @@ class Auth_Create_Providers
 				'updated_at' => array('type' => 'int', 'constraint' => 11, 'default' => 0),
 			), array('id'));
 
-			if (! \Auth::check_index_exists($table, 'parent_id')) {
+			if (! \Auth\Migration::check_index_exists($table, 'parent_id')) {
 				\DBUtil::create_index($table, 'parent_id', 'parent_id');
 			}
 		}

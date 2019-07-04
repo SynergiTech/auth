@@ -42,7 +42,7 @@ class Auth_Create_Permissiontables
 			), array('id'));
 
 			// add a unique index on group and permission
-			if (! \Auth::check_index_exists($table.'_permissions', 'permission')) {
+			if (! \Auth\Migration::check_index_exists($table.'_permissions', 'permission')) {
 				\DBUtil::create_index($table.'_permissions', array('area', 'permission'), 'permission', 'UNIQUE');
 			}
 		}

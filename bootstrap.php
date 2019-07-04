@@ -45,4 +45,6 @@
 	'Auth\\Model\\Auth_Rolepermission'  => __DIR__.'/classes/model/auth/rolepermission.php',
 	'Auth\\Model\\Auth_Permission'      => __DIR__.'/classes/model/auth/permission.php',
 	'Auth\\Model\\Auth_Provider'        => __DIR__.'/classes/model/auth/provider.php',
+
+	'Auth\\Migration' => __DIR__.'/classes/migration.php',
 ));
