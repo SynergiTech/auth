@@ -58,7 +58,10 @@ class Auth_Create_Oauth2tables
 			'suspended' => array( 'type' => 'tinyint', 'constraint' => 1, 'default' => 0),
 			'notes' => array('type' => 'tinytext'),
 		), array('id'));
-		\DBUtil::create_index($basetable.'_clients', 'client_id', 'client_id', 'UNIQUE');
+
+		if (! \Auth\Migration::check_index_exists($basetable.'_clients', 'client_id')) {
+			\DBUtil::create_index($basetable.'_clients', 'client_id', 'client_id', 'UNIQUE');
+		}
 
 		\DBUtil::create_table($basetable.'_sessions',
 			array(
@@ -97,7 +100,10 @@ class Auth_Create_Oauth2tables
 			'name' => array('type' => 'varchar', 'constraint' => 64, 'default' => ''),
 			'description' => array('type' => 'varchar', 'constraint' => 255, 'default' => ''),
 		), array('id'));
-		\DBUtil::create_index($basetable.'_scopes', 'scope', 'scope', 'UNIQUE');
+
+		if (! \Auth\Migration::check_index_exists($basetable.'_scopes', 'scope')) {
+			\DBUtil::create_index($basetable.'_scopes', 'scope', 'scope', 'UNIQUE');
+		}
 
 		\DBUtil::create_table($basetable.'_sessionscopes',
 			array(
@@ -130,9 +136,16 @@ class Auth_Create_Oauth2tables
 				),
 			)
 		);
-		\DBUtil::create_index($basetable.'_sessionscopes', 'session_id', 'session_id');
-		\DBUtil::create_index($basetable.'_sessionscopes', 'access_token', 'access_token');
-		\DBUtil::create_index($basetable.'_sessionscopes', 'scope', 'scope');
+
+		if (! \Auth\Migration::check_index_exists($basetable.'_sessionscopes', 'session_id')) {
+			\DBUtil::create_index($basetable.'_sessionscopes', 'session_id', 'session_id');
+		}
+		if (! \Auth\Migration::check_index_exists($basetable.'_sessionscopes', 'access_token')) {
+			\DBUtil::create_index($basetable.'_sessionscopes', 'access_token', 'access_token');
+		}
+		if (! \Auth\Migration::check_index_exists($basetable.'_sessionscopes', 'scope')) {
+			\DBUtil::create_index($basetable.'_sessionscopes', 'scope', 'scope');
+		}
 
 		// reset any DBUtil connection set
 		$this->dbconnection(false);
